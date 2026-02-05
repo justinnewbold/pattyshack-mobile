@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../lib/store';
 import Colors from '../../constants/Colors';
 
 export default function MessagesScreen() {
+  const router = useRouter();
   const { messages, fetchMessages, markMessageRead } = useStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -108,7 +110,11 @@ export default function MessagesScreen() {
       </ScrollView>
 
       {/* Compose Button */}
-      <TouchableOpacity style={styles.composeButton} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.composeButton}
+        activeOpacity={0.8}
+        onPress={() => router.push('/messages/compose')}
+      >
         <Ionicons name="create-outline" size={24} color="#fff" />
       </TouchableOpacity>
     </View>

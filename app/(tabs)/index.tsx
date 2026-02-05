@@ -153,7 +153,7 @@ export default function DashboardScreen() {
             title="Log Temperature"
             icon="thermometer-outline"
             color={Colors.info}
-            onPress={() => {/* TODO: Temperature logging */}}
+            onPress={() => router.push('/temperature/log')}
           />
           <QuickAction
             title="Closing Checklist"

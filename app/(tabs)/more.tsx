@@ -107,29 +107,68 @@ export default function MoreScreen() {
       <SectionHeader title="Work" />
       <View style={styles.menuSection}>
         <MenuItem
-          icon="calendar-outline"
-          label="Time & Attendance"
+          icon="time-outline"
+          label="Time Clock"
           color="#3b82f6"
-          onPress={() => {}}
+          onPress={() => router.push('/timeclock')}
         />
         <MenuItem
           icon="thermometer-outline"
           label="Temperature Logs"
           color="#ef4444"
-          onPress={() => {}}
+          onPress={() => router.push('/temperature/log')}
         />
         <MenuItem
-          icon="clipboard-outline"
-          label="Training & SOPs"
+          icon="school-outline"
+          label="Training"
           color="#8b5cf6"
-          onPress={() => {}}
+          onPress={() => router.push('/training')}
         />
         <MenuItem
-          icon="stats-chart-outline"
-          label="My Performance"
-          color="#10b981"
-          onPress={() => {}}
+          icon="swap-horizontal-outline"
+          label="Shift Request"
+          color="#f59e0b"
+          onPress={() => router.push('/shifts/request')}
         />
+        <MenuItem
+          icon="heart-outline"
+          label="Recognition"
+          color="#ec4899"
+          onPress={() => router.push('/recognition')}
+        />
+      </View>
+
+      {/* Operations Section */}
+      <SectionHeader title="Operations" />
+      <View style={styles.menuSection}>
+        <MenuItem
+          icon="construct-outline"
+          label="Equipment"
+          color="#6366f1"
+          onPress={() => router.push('/equipment')}
+        />
+        <MenuItem
+          icon="cube-outline"
+          label="Inventory Count"
+          color="#14b8a6"
+          onPress={() => router.push('/inventory/count')}
+        />
+        {(user?.role === 'manager' || user?.role === 'gm' || user?.role === 'corporate') && (
+          <>
+            <MenuItem
+              icon="grid-outline"
+              label="Manager Dashboard"
+              color="#f97316"
+              onPress={() => router.push('/manager/dashboard')}
+            />
+            <MenuItem
+              icon="stats-chart-outline"
+              label="Sales Dashboard"
+              color="#10b981"
+              onPress={() => router.push('/manager/sales')}
+            />
+          </>
+        )}
       </View>
 
       {/* Support Section */}
