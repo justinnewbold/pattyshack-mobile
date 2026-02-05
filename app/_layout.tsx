@@ -87,19 +87,89 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen 
-          name="task/[id]" 
-          options={{ 
+        <Stack.Screen
+          name="task/[id]"
+          options={{
             title: 'Task',
             presentation: 'card',
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="auth/login" 
-          options={{ 
+        <Stack.Screen
+          name="auth/login"
+          options={{
             headerShown: false,
             presentation: 'modal',
-          }} 
+          }}
+        />
+        <Stack.Screen
+          name="temperature/log"
+          options={{
+            title: 'Log Temperature',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="timeclock/index"
+          options={{
+            title: 'Time Clock',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="messages/compose"
+          options={{
+            title: 'Compose Message',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="manager/dashboard"
+          options={{
+            title: 'Manager Dashboard',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="manager/sales"
+          options={{
+            title: 'Sales Dashboard',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="training/index"
+          options={{
+            title: 'Training',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="shifts/request"
+          options={{
+            title: 'Shift Request',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="equipment/index"
+          options={{
+            title: 'Equipment',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="inventory/count"
+          options={{
+            title: 'Inventory Count',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="recognition/index"
+          options={{
+            title: 'Recognition',
+            presentation: 'card',
+          }}
         />
       </Stack>
     </>
