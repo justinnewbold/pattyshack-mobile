@@ -223,8 +223,8 @@ create policy "checklist_photos_read" on storage.objects for select to authentic
 -- ---------- Seed: locations (only if none exist) ----------
 insert into public.locations (name, address, city, state, timezone)
 select * from (values
-  ('Taylorsville', '', 'Taylorsville', 'UT', 'America/Denver'),
-  ('Layton', '', 'Layton', 'UT', 'America/Denver'),
+  ('Taylorsville', '1207 W 4800 S', 'Taylorsville', 'UT', 'America/Denver'),
+  ('Layton', '2056 N Hill Field Rd', 'Layton', 'UT', 'America/Denver'),
   ('Salt Lake City Kitchen', '23 N 900 W', 'Salt Lake City', 'UT', 'America/Denver'),
   ('Denver Kitchen', '810 N Vallejo St', 'Denver', 'CO', 'America/Denver')
 ) v(name, address, city, state, timezone)
