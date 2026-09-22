@@ -113,6 +113,12 @@ export default function MoreScreen() {
           onPress={() => router.push('/timeclock')}
         />
         <MenuItem
+          icon="shield-checkmark-outline"
+          label="Food Safety Checklists"
+          color="#16a34a"
+          onPress={() => router.push('/checklists')}
+        />
+        <MenuItem
           icon="thermometer-outline"
           label="Temperature Logs"
           color="#ef4444"
