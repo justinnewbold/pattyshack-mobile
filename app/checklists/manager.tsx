@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, T
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../lib/store';
-import { supabase } from '../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { DEMO_USER } from '../../lib/checklists/demo';
 import { useChecklists } from '../../lib/checklists/store';
 import { buildTodaySlots, formatTime, isManagerRole, localDateString } from '../../lib/checklists/logic';
 import { exportInspectorPack } from '../../lib/checklists/export';
@@ -35,6 +36,19 @@ export default function ChecklistManager() {
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
+    if (!isSupabaseConfigured) {
+      // Demo mode: use what was entered on this device
+      const local = Object.values(ck.runs);
+      setRuns(local);
+      const f: (ChecklistResponse & { run: ChecklistRun })[] = [];
+      for (const run of local.filter(r => r.run_date === today)) {
+        for (const resp of Object.values(ck.responses[run.id] || {})) if (resp.passed === false) f.push({ ...resp, run });
+      }
+      setFails(f);
+      setNames({ [DEMO_USER.id]: DEMO_USER.name });
+      setLoading(false);
+      return;
+    }
     try {
       const since = localDateString(new Date(Date.now() - (DAYS - 1) * 86400000));
       const { data: r, error: e1 } = await supabase.from('checklist_runs').select('*').gte('run_date', since).lte('run_date', today);
@@ -55,7 +69,7 @@ export default function ChecklistManager() {
     } finally {
       setLoading(false);
     }
-  }, [today]);
+  }, [today, ck.runs, ck.responses]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { if (!ck.loaded && currentLocation) ck.load(currentLocation.id); }, [currentLocation?.id]);

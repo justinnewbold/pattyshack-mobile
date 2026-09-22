@@ -4,7 +4,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, u
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../lib/store';
-import { useChecklists, usePendingCount } from '../../lib/checklists/store';
+import { useChecklists, usePendingCount, resetDemoData } from '../../lib/checklists/store';
+import { isSupabaseConfigured } from '../../lib/supabase';
 import { buildTodaySlots, formatTime, isHqRole, isManagerRole, isAnswered, localDateString } from '../../lib/checklists/logic';
 import { scheduleChecklistReminders } from '../../lib/checklists/reminders';
 import { C, STATION_LABELS } from '../../lib/checklists/theme';
@@ -79,12 +80,19 @@ export default function TodayChecklists() {
             <Text style={styles.store}>{currentLocation?.name || 'No store selected'}</Text>
             <Text style={styles.date}>{now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })} · {done}/{slots.length} done</Text>
           </View>
+          {!isSupabaseConfigured ? (
+            <View style={[styles.pill, { backgroundColor: C.infoBg }]}>
+              <Ionicons name="flask-outline" size={16} color={C.info} />
+              <Text style={[styles.pillText, { color: C.info }]}>Demo mode</Text>
+            </View>
+          ) : (
           <View style={[styles.pill, { backgroundColor: ck.online ? C.okBg : C.warnBg }]}>
             <Ionicons name={ck.online ? 'cloud-done-outline' : 'cloud-offline-outline'} size={16} color={ck.online ? C.ok : C.warn} />
             <Text style={[styles.pillText, { color: ck.online ? C.ok : C.warn }]}>
               {ck.online ? (ck.syncing ? 'Syncing…' : pending ? `${pending} to sync` : 'Synced') : `Offline${pending ? ` · ${pending} saved` : ''}`}
             </Text>
           </View>
+          )}
         </View>
 
         {/* Store switcher for managers */}
@@ -167,6 +175,15 @@ export default function TodayChecklists() {
               <Ionicons name="stats-chart-outline" size={22} color={C.info} />
               <Text style={styles.toolText}>Dashboard & inspector export</Text>
             </TouchableOpacity>
+            {!isSupabaseConfigured && (
+              <TouchableOpacity style={styles.tool} onPress={() => {
+                const go = async () => { await resetDemoData(); setNow(new Date()); };
+                if (typeof window !== 'undefined' && (window as any).confirm) { if ((window as any).confirm('Reset the demo? This clears every answer on this device.')) go(); } else go();
+              }}>
+                <Ionicons name="refresh-outline" size={22} color={C.info} />
+                <Text style={styles.toolText}>Reset demo data</Text>
+              </TouchableOpacity>
+            )}
             {isHqRole(user.role) && (
               <TouchableOpacity style={styles.tool} onPress={() => router.push('/checklists/builder')}>
                 <Ionicons name="construct-outline" size={22} color={C.info} />

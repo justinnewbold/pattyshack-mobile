@@ -4,9 +4,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../lib/store';
-import { supabase } from '../../lib/supabase';
-import { useChecklists } from '../../lib/checklists/store';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { useChecklists, saveDemoConfig } from '../../lib/checklists/store';
+import { uuid } from '../../lib/checklists/logic';
 import { formatTime, isHqRole } from '../../lib/checklists/logic';
+
+const DEMO = !isSupabaseConfigured;
+const st = () => useChecklists.getState();
 import { C, STATION_LABELS } from '../../lib/checklists/theme';
 import type { ChecklistItem, ChecklistSchedule, ChecklistTemplate, ItemType, TemplateCategory } from '../../types/checklists';
 
@@ -31,11 +35,17 @@ export default function ChecklistBuilder() {
   const [busy, setBusy] = useState(false);
 
   const loadTemplates = async () => {
+    if (DEMO) { setAllTemplates([...st().templates].sort((a, b) => a.name.localeCompare(b.name))); return; }
     const { data, error } = await supabase.from('checklist_templates').select('*').order('name');
     if (error) return say('Could not load lists', error.message);
     setAllTemplates(data || []);
   };
   const loadDetail = async (id: string) => {
+    if (DEMO) {
+      setItems(st().items.filter(i => i.template_id === id).sort((a, b) => a.position - b.position));
+      setSchedules(st().schedules.filter(x => x.template_id === id).sort((a, b) => a.window_start.localeCompare(b.window_start)));
+      return;
+    }
     const [i, s] = await Promise.all([
       supabase.from('checklist_items').select('*').eq('template_id', id).order('position'),
       supabase.from('checklist_schedules').select('*').eq('template_id', id).order('window_start'),
@@ -57,11 +67,17 @@ export default function ChecklistBuilder() {
   const saveTemplate = async (patch: Partial<ChecklistTemplate>) => {
     if (!t) return;
     setAllTemplates(ts => ts.map(x => (x.id === t.id ? { ...x, ...patch } : x)));
+    if (DEMO) { await saveDemoConfig({ templates: st().templates.map(x => (x.id === t.id ? { ...x, ...patch } : x)) }); return; }
     const { error } = await supabase.from('checklist_templates').update(patch).eq('id', t.id);
     if (error) say('Save failed', error.message); else done();
   };
 
   const newTemplate = async () => {
+    if (DEMO) {
+      const nt: ChecklistTemplate = { id: uuid(), name: 'New list', category: 'line_check', station: 'all', description: null, requires_signoff: false, active: true };
+      await saveDemoConfig({ templates: [...st().templates, nt] });
+      await loadTemplates(); setSelected(nt.id); return;
+    }
     setBusy(true);
     const { data, error } = await supabase.from('checklist_templates').insert({ name: 'New list', category: 'line_check', station: 'all' }).select().single();
     setBusy(false);
@@ -79,12 +95,14 @@ export default function ChecklistBuilder() {
       options: type === 'choice' ? ['Good', 'Needs attention'] : null,
       fail_options: type === 'choice' ? ['Needs attention'] : null,
     };
+    if (DEMO) { await saveDemoConfig({ items: [...st().items, { ...row, id: uuid() } as ChecklistItem] }); await loadDetail(t.id); return; }
     const { error } = await supabase.from('checklist_items').insert(row);
     if (error) return say('Could not add item', error.message);
     await loadDetail(t.id); done();
   };
 
   const saveItem = async (item: ChecklistItem) => {
+    if (DEMO) { await saveDemoConfig({ items: st().items.map(i => (i.id === item.id ? item : i)) }); setItems(xs => xs.map(i => (i.id === item.id ? item : i))); say('Saved'); return; }
     const { id, ...rest } = item;
     const { error } = await supabase.from('checklist_items').update(rest).eq('id', id);
     if (error) say('Save failed', error.message); else { say('Saved'); done(); }
@@ -92,6 +110,7 @@ export default function ChecklistBuilder() {
 
   const removeItem = async (item: ChecklistItem) => {
     const go = async () => {
+      if (DEMO) { await saveDemoConfig({ items: st().items.filter(i => i.id !== item.id) }); await loadDetail(t!.id); return; }
       const { error } = await supabase.from('checklist_items').delete().eq('id', item.id);
       if (error) return say('Could not delete', error.message.includes('foreign key') ? 'This item already has recorded answers. Turn it to optional instead, or make a new list version.' : error.message);
       await loadDetail(t!.id); done();
@@ -106,6 +125,7 @@ export default function ChecklistBuilder() {
     const a = items[idx], b = items[j];
     const next = [...items]; next[idx] = { ...b, position: a.position }; next[j] = { ...a, position: b.position };
     setItems(next);
+    if (DEMO) { await saveDemoConfig({ items: st().items.map(i => next.find(n => n.id === i.id) || i) }); return; }
     await Promise.all([
       supabase.from('checklist_items').update({ position: b.position }).eq('id', a.id),
       supabase.from('checklist_items').update({ position: a.position }).eq('id', b.id),
@@ -115,17 +135,26 @@ export default function ChecklistBuilder() {
 
   const addSchedule = async () => {
     if (!t) return;
+    if (DEMO) {
+      const ns: ChecklistSchedule = { id: uuid(), template_id: t.id, location_id: null, label: null, days: [0, 1, 2, 3, 4, 5, 6], window_start: '10:00:00', window_end: '11:00:00', active: true };
+      await saveDemoConfig({ schedules: [...st().schedules, ns] }); await loadDetail(t.id); return;
+    }
     const { error } = await supabase.from('checklist_schedules').insert({ template_id: t.id, window_start: '10:00', window_end: '11:00' });
     if (error) return say('Could not add time', error.message);
     await loadDetail(t.id); done();
   };
   const saveSchedule = async (s: ChecklistSchedule) => {
     if (!validTime(s.window_start) || !validTime(s.window_end)) return say('Times look wrong', 'Use 24-hour time like 14:00.');
+    if (DEMO) {
+      const fixed = { ...s, window_start: `${s.window_start.trim().padStart(5, '0')}:00`, window_end: `${s.window_end.trim().padStart(5, '0')}:00` };
+      await saveDemoConfig({ schedules: st().schedules.map(x => (x.id === s.id ? fixed : x)) }); say('Saved'); return;
+    }
     const { id, ...rest } = s;
     const { error } = await supabase.from('checklist_schedules').update(rest).eq('id', id);
     if (error) say('Save failed', error.message); else { say('Saved'); done(); }
   };
   const removeSchedule = async (s: ChecklistSchedule) => {
+    if (DEMO) { await saveDemoConfig({ schedules: st().schedules.filter(x => x.id !== s.id) }); await loadDetail(t!.id); return; }
     const { error } = await supabase.from('checklist_schedules').delete().eq('id', s.id);
     if (error) return say('Could not delete', error.message);
     await loadDetail(t!.id); done();

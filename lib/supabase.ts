@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/dist/polyfill';
+import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
@@ -28,6 +28,10 @@ const ExpoSecureStoreAdapter = {
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://your-project.supabase.co';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key';
+
+// Demo mode: no real database yet. The checklist app runs on built-in sample
+// data saved on the device. Setting the two env vars turns this off automatically.
+export const isSupabaseConfigured = !supabaseUrl.includes('your-project') && supabaseAnonKey !== 'your-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

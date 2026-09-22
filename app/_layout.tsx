@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useStore } from '../lib/store';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { DEMO_LOCATIONS, DEMO_USER } from '../lib/checklists/demo';
 
 export default function RootLayout() {
   const { setUser, setLoading, isLoading, setCurrentLocation, setLocations } = useStore();
@@ -12,6 +13,14 @@ export default function RootLayout() {
   useEffect(() => {
     // Check for existing session
     const checkSession = async () => {
+      if (!isSupabaseConfigured) {
+        // Demo mode until the database is connected
+        setUser(DEMO_USER);
+        setLocations(DEMO_LOCATIONS);
+        setCurrentLocation(DEMO_LOCATIONS[0]);
+        setLoading(false);
+        return;
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
