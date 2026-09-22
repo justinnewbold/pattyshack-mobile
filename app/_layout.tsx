@@ -108,6 +108,10 @@ export default function RootLayout() {
             presentation: 'card',
           }}
         />
+        <Stack.Screen name="checklists/index" options={{ title: 'Food Safety Checklists', presentation: 'card' }} />
+        <Stack.Screen name="checklists/run/[id]" options={{ title: 'Checklist', presentation: 'card' }} />
+        <Stack.Screen name="checklists/manager" options={{ title: 'Food Safety Dashboard', presentation: 'card' }} />
+        <Stack.Screen name="checklists/builder" options={{ title: 'List Builder', presentation: 'card' }} />
         <Stack.Screen
           name="timeclock/index"
           options={{
