@@ -4,7 +4,8 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
-import { supabase } from '../supabase';
+import { supabase, isSupabaseConfigured } from '../supabase';
+import { DEMO_ITEMS, DEMO_SCHEDULES, DEMO_TEMPLATES } from './demo';
 import { uploadPhoto } from '../photos';
 import type {
   ChecklistItem, ChecklistResponse, ChecklistRun, ChecklistSchedule,
@@ -127,6 +128,13 @@ export const useChecklists = create<ChecklistState>((set, get) => {
     },
 
     refresh: async (locationId) => {
+      if (!isSupabaseConfigured) {
+        // Demo mode: sample lists, everything stays on this device
+        if (!get().templates.length) set({ templates: DEMO_TEMPLATES, items: DEMO_ITEMS, schedules: DEMO_SCHEDULES });
+        set({ loaded: true, syncError: null });
+        await persist();
+        return;
+      }
       if (!get().online) return;
       try {
         await get().sync(); // push local work first so it is not overwritten
@@ -182,6 +190,7 @@ export const useChecklists = create<ChecklistState>((set, get) => {
     },
 
     sync: async () => {
+      if (!isSupabaseConfigured) { set({ dirtyRuns: [], dirtyResponses: [] }); return; }
       const state = get();
       if (state.syncing || !state.online) return;
       if (!state.dirtyRuns.length && !state.dirtyResponses.length) return;
@@ -325,5 +334,22 @@ export const useChecklists = create<ChecklistState>((set, get) => {
 });
 
 /** Pending changes waiting to upload */
+/** Demo mode: reset sample lists and wipe today's answers on this device */
+export async function resetDemoData() {
+  useChecklists.setState({
+    templates: DEMO_TEMPLATES, items: DEMO_ITEMS, schedules: DEMO_SCHEDULES,
+    runs: {}, responses: {}, dirtyRuns: [], dirtyResponses: [],
+  });
+  const { templates, items, schedules, runs, responses, dirtyRuns, dirtyResponses, lastSynced } = useChecklists.getState();
+  await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ templates, items, schedules, runs, responses, dirtyRuns, dirtyResponses, lastSynced }));
+}
+
+/** Demo mode: save list-builder edits to this device */
+export async function saveDemoConfig(patch: Partial<Pick<Persisted, 'templates' | 'items' | 'schedules'>>) {
+  useChecklists.setState(patch);
+  const { templates, items, schedules, runs, responses, dirtyRuns, dirtyResponses, lastSynced } = useChecklists.getState();
+  await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ templates, items, schedules, runs, responses, dirtyRuns, dirtyResponses, lastSynced }));
+}
+
 export const usePendingCount = () =>
   useChecklists(s => s.dirtyRuns.length + s.dirtyResponses.length);

@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Tex
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../../lib/store';
-import { supabase } from '../../../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase';
 import { useChecklists } from '../../../lib/checklists/store';
 import { blockingIndex, canComplete, formatTime, isAnswered, isManagerRole, rangeText } from '../../../lib/checklists/logic';
 import { C } from '../../../lib/checklists/theme';
@@ -29,7 +29,7 @@ export default function RunChecklist() {
   const [remote, setRemote] = useState<{ run: ChecklistRun; responses: Record<string, ChecklistResponse> } | null>(null);
   const localRun = ck.runs[id!];
   useEffect(() => {
-    if (localRun || !id) return;
+    if (localRun || !id || !isSupabaseConfigured) return;
     (async () => {
       const { data: run } = await supabase.from('checklist_runs').select('*').eq('id', id).single();
       if (!run) return;

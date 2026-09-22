@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npx expo export -p web",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": null,
+  "redirects": [{ "source": "/", "destination": "/checklists", "permanent": false }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

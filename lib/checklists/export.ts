@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { supabase } from '../supabase';
+import { supabase, isSupabaseConfigured } from '../supabase';
+import { useChecklists } from './store';
+import { DEMO_USER } from './demo';
 import type { ChecklistItem, ChecklistResponse, ChecklistRun, ChecklistTemplate } from '../../types/checklists';
 import { formatTime } from './logic';
 
@@ -18,7 +20,21 @@ interface ExportData {
   names: Record<string, string>;
 }
 
+function gatherDemo(locationId: string, locationName: string, from: string, to: string): ExportData {
+  const st = useChecklists.getState();
+  const runs = Object.values(st.runs)
+    .filter(r => r.location_id === locationId && r.run_date >= from && r.run_date <= to)
+    .sort((a, b) => (a.run_date + (a.window_start || '')).localeCompare(b.run_date + (b.window_start || '')));
+  const rows = runs.map(run => ({
+    run,
+    template: st.templates.find(t => t.id === run.template_id)!,
+    items: st.itemsFor(run.template_id).map(item => ({ item, resp: st.responses[run.id]?.[item.id] })),
+  })).filter(r => r.template);
+  return { locationName, from, to, rows, names: { [DEMO_USER.id]: DEMO_USER.name } };
+}
+
 async function gather(locationId: string, locationName: string, from: string, to: string): Promise<ExportData> {
+  if (!isSupabaseConfigured) return gatherDemo(locationId, locationName, from, to);
   const { data: runs, error } = await supabase.from('checklist_runs').select('*')
     .eq('location_id', locationId).gte('run_date', from).lte('run_date', to)
     .order('run_date').order('window_start');
